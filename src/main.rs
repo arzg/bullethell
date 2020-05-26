@@ -163,8 +163,13 @@ impl MainState {
 
         // Remove all lasers that are ‘above’ the screen. We do this because otherwise these
         // lasers (which you can’t see anyway) are going to be continually re-rendered again and
-        // again.
-        self.lasers.retain(|laser| laser.pos().y >= 0.0);
+        // again. We also remove lasers that have successfully hit the Sky Core.
+        let sky_core_hitbox = self.sky_core.hitbox();
+        self.lasers.retain(|laser| {
+            let above_top_of_screen = laser.pos().y >= 0.0;
+            let hit_sky_core = laser.hitbox().overlaps(&sky_core_hitbox);
+            above_top_of_screen && !hit_sky_core
+        });
 
         //
         // Sky Core
