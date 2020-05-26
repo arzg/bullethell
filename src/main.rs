@@ -193,6 +193,19 @@ impl MainState {
         Ok(())
     }
 
+    fn update_with_retry(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
+        use ggez::input::keyboard;
+
+        let keys = keyboard::pressed_keys(ctx);
+
+        // Retry when ‘r’ is pressed.
+        if keys.contains(&keyboard::KeyCode::R) {
+            *self = Self::new(ctx);
+        }
+
+        Ok(())
+    }
+
     fn draw_playing(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
         use game_test::{HealthBar, ImageDrawable};
 
@@ -242,10 +255,10 @@ impl MainState {
 
 impl event::EventHandler for MainState {
     fn update(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
-        // Only update the game if we haven’t won or died yet.
+        // Allow the user to retry if tthey have won or if they died.
         match self.state {
             State::Playing => self.update_playing(ctx),
-            _ => Ok(()),
+            State::Died | State::Won => self.update_with_retry(ctx),
         }
     }
 
