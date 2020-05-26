@@ -162,7 +162,7 @@ impl MainState {
         //
 
         // Shoot a bullet from the Sky Core one in ten cycles.
-        if rand::thread_rng().gen_range(0, 5) == 0 {
+        if rand::thread_rng().gen_range(0, 10) == 0 {
             self.bullets.push(self.sky_core.shoot(ctx));
         }
 
