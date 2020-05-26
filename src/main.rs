@@ -262,15 +262,8 @@ impl MainState {
         }
         self.sky_core.draw(ctx)?;
 
-        let ship_health_bar = self.ship.health_bar(ctx)?;
-        graphics::draw(ctx, &ship_health_bar, (game_test::Point::new(0.0, 0.0),))?;
-
-        let sky_core_health_bar = self.sky_core.health_bar(ctx)?;
-        graphics::draw(
-            ctx,
-            &sky_core_health_bar,
-            (game_test::Point::new(0.0, 0.0),),
-        )?;
+        self.ship.health_bar(ctx)?.draw(ctx)?;
+        self.sky_core.health_bar(ctx)?.draw(ctx)?;
 
         Ok(())
     }
