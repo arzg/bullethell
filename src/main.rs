@@ -18,6 +18,13 @@ struct MainState {
     cooled_down: bool,
     shoot_s: cb::Sender<()>,
     cooldown_r: cb::Receiver<()>,
+    state: State,
+}
+
+enum State {
+    Playing,
+    Died,
+    Won,
 }
 
 impl MainState {
@@ -49,14 +56,13 @@ impl MainState {
             cooled_down: true,
             shoot_s,
             cooldown_r,
+            state: State::Playing,
         }
     }
-}
 
-impl event::EventHandler for MainState {
-    fn update(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
+    fn update_playing(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
         use {
-            game_test::{Hitbox, Position, StepDistance, TakeDamage, Velocity},
+            game_test::{Health, Hitbox, Position, StepDistance, TakeDamage, Velocity},
             ggez::input::keyboard,
             rand::Rng,
         };
@@ -177,10 +183,17 @@ impl event::EventHandler for MainState {
             above_bottom_of_screen && !hit_ship
         });
 
+        match (self.ship.is_dead(), self.sky_core.is_dead()) {
+            (true, true) => panic!("sda"),
+            (true, _) => self.state = State::Died,
+            (_, true) => self.state = State::Won,
+            _ => (),
+        }
+
         Ok(())
     }
 
-    fn draw(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
+    fn draw_playing(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
         use game_test::{HealthBar, ImageDrawable};
 
         graphics::clear(ctx, SKY_COLOR.into());
@@ -205,8 +218,45 @@ impl event::EventHandler for MainState {
             (game_test::Point::new(0.0, 0.0),),
         )?;
 
-        graphics::present(ctx)?;
         Ok(())
+    }
+
+    fn draw_died(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
+        graphics::clear(ctx, graphics::BLACK);
+
+        let text = graphics::Text::new("You died.");
+        graphics::draw(ctx, &text, (game_test::Point::new(0.0, 0.0),))?;
+
+        Ok(())
+    }
+
+    fn draw_won(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
+        graphics::clear(ctx, graphics::BLACK);
+
+        let text = graphics::Text::new("You won!");
+        graphics::draw(ctx, &text, (game_test::Point::new(0.0, 0.0),))?;
+
+        Ok(())
+    }
+}
+
+impl event::EventHandler for MainState {
+    fn update(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
+        // Only update the game if we haven’t won or died yet.
+        match self.state {
+            State::Playing => self.update_playing(ctx),
+            _ => Ok(()),
+        }
+    }
+
+    fn draw(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
+        match self.state {
+            State::Playing => self.draw_playing(ctx)?,
+            State::Died => self.draw_died(ctx)?,
+            State::Won => self.draw_won(ctx)?,
+        }
+
+        graphics::present(ctx)
     }
 }
 

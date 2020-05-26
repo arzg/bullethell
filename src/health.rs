@@ -9,6 +9,10 @@ pub trait Health {
 
     fn health(&self) -> u16;
     fn health_mut(&mut self) -> &mut u16;
+
+    fn is_dead(&self) -> bool {
+        self.health() == 0
+    }
 }
 
 pub trait HealthBar: Health + crate::CenterPosition {

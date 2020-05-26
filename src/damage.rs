@@ -4,7 +4,9 @@ pub trait Damage {
 
 pub trait TakeDamage: crate::Health {
     fn take_damage<D: Damage>(&mut self, _damager: &D) {
-        *self.health_mut() -= D::DAMAGE;
+        // We subtract without underflowing to keep the health at zero if a fatal shot has been
+        // fired.
+        *self.health_mut() = self.health().saturating_sub(D::DAMAGE);
     }
 }
 
