@@ -4,6 +4,7 @@ mod health;
 mod hitbox;
 mod image_drawable;
 mod laser;
+mod on_screen;
 mod position;
 mod ship;
 mod sky_core;
@@ -18,6 +19,7 @@ pub use {
     hitbox::Hitbox,
     image_drawable::ImageDrawable,
     laser::Laser,
+    on_screen::OnScreen,
     position::{CenterPosition, Position},
     ship::Ship,
     sky_core::SkyCore,

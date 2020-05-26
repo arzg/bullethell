@@ -80,7 +80,7 @@ impl MainState {
 
     fn update_playing(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
         use {
-            game_test::{Health, Hitbox, Position, StepDistance, TakeDamage, Velocity},
+            game_test::{Health, Hitbox, OnScreen, Position, StepDistance, TakeDamage, Velocity},
             ggez::input::keyboard,
             rand::Rng,
         };
@@ -161,16 +161,6 @@ impl MainState {
             }
         }
 
-        // Remove all lasers that are ‘above’ the screen. We do this because otherwise these
-        // lasers (which you can’t see anyway) are going to be continually re-rendered again and
-        // again. We also remove lasers that have successfully hit the Sky Core.
-        let sky_core_hitbox = self.sky_core.hitbox();
-        self.lasers.retain(|laser| {
-            let above_top_of_screen = laser.pos().y >= 0.0;
-            let hit_sky_core = laser.hitbox().overlaps(&sky_core_hitbox);
-            above_top_of_screen && !hit_sky_core
-        });
-
         //
         // Sky Core
         //
@@ -190,21 +180,16 @@ impl MainState {
             bullet.step_distance(adjusted_bullet_speed);
         }
 
-        let ship_hitbox = self.ship.hitbox();
-
         // The ship takes damage for every bullet that hits it.
         for bullet in &self.bullets {
-            if bullet.hitbox().overlaps(&ship_hitbox) {
+            if bullet.hitbox().overlaps(&self.ship.hitbox()) {
                 self.ship.take_damage(bullet);
             }
         }
 
-        // Only keep bullets that are above the bottom of the screen and haven’t hit the ship.
-        self.bullets.retain(|bullet| {
-            let above_bottom_of_screen = bullet.pos().y <= graphics::screen_coordinates(ctx).h;
-            let hit_ship = bullet.hitbox().overlaps(&ship_hitbox);
-            above_bottom_of_screen && !hit_ship
-        });
+        //
+        // Shift states if necessary
+        //
 
         match (self.ship.is_dead(), self.sky_core.is_dead()) {
             (true, true) => panic!("sda"),
@@ -222,6 +207,23 @@ impl MainState {
             }
             _ => (),
         }
+
+        //
+        // Clean up
+        //
+
+        // Remove all bullets and lasers that aren’t on the screen. We do this because otherwise
+        // these bullets and lasers (which you can’t see anyway) are going to be continually
+        // re-rendered again and again. We also remove lasers that have hit the Sky Core, and
+        // bullets that have hit the ship.
+
+        let ship_hitbox = self.ship.hitbox();
+        let sky_core_hitbox = self.sky_core.hitbox();
+
+        self.bullets
+            .retain(|bullet| bullet.is_on_screen(ctx) && !bullet.hitbox().overlaps(&ship_hitbox));
+        self.lasers
+            .retain(|laser| laser.is_on_screen(ctx) && !laser.hitbox().overlaps(&sky_core_hitbox));
 
         Ok(())
     }
