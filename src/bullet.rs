@@ -12,7 +12,8 @@ impl<'a> Bullet {
     pub fn new(pos: crate::Point, ctx: &mut ggez::Context) -> Self {
         use rand::Rng;
 
-        let rand_vector = crate::Vector::new(rand::thread_rng().gen_range(-0.5, 0.5), 1.0);
+        let mut rng = rand::thread_rng();
+        let rand_vector = crate::Vector::new(rng.gen_range(-0.5, 0.5), rng.gen_range(1.0, 2.5));
 
         Self {
             pos,
