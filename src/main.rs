@@ -23,6 +23,10 @@ struct MainState {
 
 enum State {
     Playing,
+    Frozen(FrozenState),
+}
+
+enum FrozenState {
     Died,
     Won,
 }
@@ -185,8 +189,8 @@ impl MainState {
 
         match (self.ship.is_dead(), self.sky_core.is_dead()) {
             (true, true) => panic!("sda"),
-            (true, _) => self.state = State::Died,
-            (_, true) => self.state = State::Won,
+            (true, _) => self.state = State::Frozen(FrozenState::Died),
+            (_, true) => self.state = State::Frozen(FrozenState::Won),
             _ => (),
         }
 
@@ -255,18 +259,18 @@ impl MainState {
 
 impl event::EventHandler for MainState {
     fn update(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
-        // Allow the user to retry if tthey have won or if they died.
+        // Allow the user to retry if the game is in a frozen state.
         match self.state {
             State::Playing => self.update_playing(ctx),
-            State::Died | State::Won => self.update_with_retry(ctx),
+            State::Frozen(_) => self.update_with_retry(ctx),
         }
     }
 
     fn draw(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
         match self.state {
             State::Playing => self.draw_playing(ctx)?,
-            State::Died => self.draw_died(ctx)?,
-            State::Won => self.draw_won(ctx)?,
+            State::Frozen(FrozenState::Died) => self.draw_died(ctx)?,
+            State::Frozen(FrozenState::Won) => self.draw_won(ctx)?,
         }
 
         graphics::present(ctx)
