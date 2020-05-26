@@ -154,7 +154,7 @@ impl MainState {
             laser.pos_mut().y -= adjusted_laser_speed;
         }
 
-        // Let the Sky Core’s take damage for every laser that hits it.
+        // Let the Sky Core take damage for every laser that hits it.
         for laser in &self.lasers {
             if laser.hitbox().overlaps(&self.sky_core.hitbox()) {
                 self.sky_core.take_damage(laser);
