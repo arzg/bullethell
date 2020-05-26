@@ -21,11 +21,16 @@ struct MainState {
     state: State,
 }
 
+#[derive(Copy, Clone)]
 enum State {
     Playing,
-    Frozen(FrozenState),
+    Frozen {
+        state: FrozenState,
+        overlay_alpha: f32,
+    },
 }
 
+#[derive(Copy, Clone)]
 enum FrozenState {
     Died,
     Won,
@@ -189,16 +194,34 @@ impl MainState {
 
         match (self.ship.is_dead(), self.sky_core.is_dead()) {
             (true, true) => panic!("sda"),
-            (true, _) => self.state = State::Frozen(FrozenState::Died),
-            (_, true) => self.state = State::Frozen(FrozenState::Won),
+            (true, _) => {
+                self.state = State::Frozen {
+                    state: FrozenState::Died,
+                    overlay_alpha: 0.0,
+                }
+            }
+            (_, true) => {
+                self.state = State::Frozen {
+                    state: FrozenState::Won,
+                    overlay_alpha: 0.0,
+                }
+            }
             _ => (),
         }
 
         Ok(())
     }
 
-    fn update_with_retry(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
+    fn update_frozen(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
         use ggez::input::keyboard;
+
+        match self.state {
+            State::Frozen {
+                ref mut overlay_alpha,
+                ..
+            } => *overlay_alpha = num::clamp(*overlay_alpha + 0.01, 0.0, 1.0),
+            _ => unreachable!(),
+        }
 
         let keys = keyboard::pressed_keys(ctx);
 
@@ -238,19 +261,40 @@ impl MainState {
         Ok(())
     }
 
-    fn draw_died(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
-        graphics::clear(ctx, graphics::BLACK);
+    fn draw_frozen(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
+        let (state, overlay_alpha) = match self.state {
+            State::Frozen {
+                state,
+                overlay_alpha,
+            } => (state, overlay_alpha),
+            _ => unreachable!(),
+        };
 
-        let text = graphics::Text::new("You died.");
-        graphics::draw(ctx, &text, (game_test::Point::new(0.0, 0.0),))?;
+        self.draw_playing(ctx)?;
 
-        Ok(())
-    }
+        let overlay = {
+            let screen_dimens = graphics::screen_coordinates(ctx);
+            let alpha = overlay_alpha;
 
-    fn draw_won(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
-        graphics::clear(ctx, graphics::BLACK);
+            graphics::Mesh::new_rectangle(
+                ctx,
+                graphics::DrawMode::fill(),
+                screen_dimens,
+                (0.0, 0.0, 0.0, alpha).into(),
+            )?
+        };
 
-        let text = graphics::Text::new("You won!");
+        graphics::draw(ctx, &overlay, (game_test::Point::new(0.0, 0.0),))?;
+
+        let text = {
+            let text = match state {
+                FrozenState::Died => "You died.",
+                FrozenState::Won => "You won!",
+            };
+
+            graphics::Text::new(text)
+        };
+
         graphics::draw(ctx, &text, (game_test::Point::new(0.0, 0.0),))?;
 
         Ok(())
@@ -262,15 +306,14 @@ impl event::EventHandler for MainState {
         // Allow the user to retry if the game is in a frozen state.
         match self.state {
             State::Playing => self.update_playing(ctx),
-            State::Frozen(_) => self.update_with_retry(ctx),
+            State::Frozen { .. } => self.update_frozen(ctx),
         }
     }
 
     fn draw(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
         match self.state {
             State::Playing => self.draw_playing(ctx)?,
-            State::Frozen(FrozenState::Died) => self.draw_died(ctx)?,
-            State::Frozen(FrozenState::Won) => self.draw_won(ctx)?,
+            State::Frozen { .. } => self.draw_frozen(ctx)?,
         }
 
         graphics::present(ctx)
