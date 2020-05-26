@@ -1,5 +1,3 @@
-use ggez::graphics;
-
 mod bullet;
 mod damage;
 mod health;
@@ -30,10 +28,3 @@ pub use {
 
 pub type Point = ggez::nalgebra::Point2<f32>;
 pub type Vector = ggez::nalgebra::Vector2<f32>;
-
-pub fn are_overlapping(lhs: graphics::Rect, rhs: graphics::Rect) -> bool {
-    (lhs.x < (rhs.x + rhs.w))
-        && ((lhs.x + lhs.w) > rhs.x)
-        && (lhs.y < (rhs.y + rhs.h))
-        && ((lhs.y + lhs.h) > rhs.y)
-}

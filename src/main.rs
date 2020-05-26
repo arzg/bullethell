@@ -138,7 +138,7 @@ impl MainState {
 
         // Let the Sky Core’s take damage for every laser that hits it.
         for laser in &self.lasers {
-            if game_test::are_overlapping(laser.hitbox(), self.sky_core.hitbox()) {
+            if laser.hitbox().overlaps(&self.sky_core.hitbox()) {
                 self.sky_core.take_damage(laser);
             }
         }
@@ -171,7 +171,7 @@ impl MainState {
 
         // The ship takes damage for every bullet that hits it.
         for bullet in &self.bullets {
-            if game_test::are_overlapping(bullet.hitbox(), ship_hitbox) {
+            if bullet.hitbox().overlaps(&ship_hitbox) {
                 self.ship.take_damage(bullet);
             }
         }
@@ -179,7 +179,7 @@ impl MainState {
         // Only keep bullets that are above the bottom of the screen and haven’t hit the ship.
         self.bullets.retain(|bullet| {
             let above_bottom_of_screen = bullet.pos().y <= graphics::screen_coordinates(ctx).h;
-            let hit_ship = game_test::are_overlapping(bullet.hitbox(), ship_hitbox);
+            let hit_ship = bullet.hitbox().overlaps(&ship_hitbox);
             above_bottom_of_screen && !hit_ship
         });
 
