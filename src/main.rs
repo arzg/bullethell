@@ -9,6 +9,7 @@ const LASER_SPEED: f32 = 900.0;
 const BULLET_SPEED: f32 = 100.0;
 const SKY_CORE_SPEED: f32 = 10.0;
 const LASER_COOLDOWN: Duration = Duration::from_millis(100);
+const SHIP_OFFSET_FROM_BOTTOM: f32 = 100.0;
 
 struct MainState {
     ship: game_test::Ship,
@@ -57,8 +58,16 @@ impl MainState {
             }
         });
 
+        let screen_dimens = graphics::screen_coordinates(ctx);
+
         Self {
-            ship: game_test::Ship::new(game_test::Point::new(0.0, 0.0), ctx),
+            ship: game_test::Ship::new(
+                game_test::Point::new(
+                    screen_dimens.w / 2.0,
+                    screen_dimens.h - SHIP_OFFSET_FROM_BOTTOM,
+                ),
+                ctx,
+            ),
             lasers: vec![],
             sky_core: game_test::SkyCore::new(ctx),
             bullets: vec![],
