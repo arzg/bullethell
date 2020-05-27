@@ -16,9 +16,7 @@ struct MainState {
     lasers: Vec<game_test::Laser>,
     sky_core: game_test::SkyCore,
     bullets: Vec<game_test::Bullet>,
-    cooled_down: bool,
-    shoot_s: cb::Sender<()>,
-    cooldown_r: cb::Receiver<()>,
+    time_since_shot_laser: Duration,
     state: State,
 }
 
@@ -40,25 +38,6 @@ enum FrozenState {
 
 impl MainState {
     fn new(ctx: &mut ggez::Context) -> Self {
-        use std::thread;
-
-        let (shoot_s, shoot_r) = cb::unbounded();
-        let (cooldown_s, cooldown_r) = cb::unbounded();
-
-        thread::spawn(move || {
-            loop {
-                // A laser has been shot. We reply once the cooldown is finished.
-                if shoot_r.recv().is_ok() {
-                    thread::sleep(LASER_COOLDOWN);
-
-                    // If we can’t send values on the channel then the player gets an unfair
-                    // advantage -- no cooldown on the laser. This is unacceptable, so we stop the
-                    // whole game.
-                    cooldown_s.send(()).unwrap();
-                }
-            }
-        });
-
         let screen_dimens = graphics::screen_coordinates(ctx);
 
         Self {
@@ -72,9 +51,9 @@ impl MainState {
             lasers: vec![],
             sky_core: game_test::SkyCore::new(ctx),
             bullets: vec![],
-            cooled_down: true,
-            shoot_s,
-            cooldown_r,
+            // If the time since the laser was last shot is the laser cooldown, then this means that
+            // we can start shooting immediately
+            time_since_shot_laser: LASER_COOLDOWN,
             state: State::Playing,
         }
     }
@@ -88,12 +67,13 @@ impl MainState {
 
         // The longer between each frame, the further things move. This compensates for any
         // changes in FPS.
-        let delta_time = ggez::timer::delta(ctx).as_secs_f32();
+        let delta_time = ggez::timer::delta(ctx);
+        let delta_time_secs = delta_time.as_secs_f32();
 
-        let adjusted_ship_speed = SHIP_SPEED * delta_time;
-        let adjusted_laser_speed = LASER_SPEED * delta_time;
-        let adjusted_bullet_speed = BULLET_SPEED * delta_time;
-        let adjusted_sky_core_speed = SKY_CORE_SPEED * delta_time;
+        let adjusted_ship_speed = SHIP_SPEED * delta_time_secs;
+        let adjusted_laser_speed = LASER_SPEED * delta_time_secs;
+        let adjusted_bullet_speed = BULLET_SPEED * delta_time_secs;
+        let adjusted_sky_core_speed = SKY_CORE_SPEED * delta_time_secs;
 
         let keys = keyboard::pressed_keys(ctx);
 
@@ -145,21 +125,13 @@ impl MainState {
         // Lasers
         //
 
-        // We use try_recv() rather than recv() to ensure that this doesn’t block. After all, we
-        // have other things to do (e.g. move the ship) while the laser is cooling down.
-        if self.cooldown_r.try_recv().is_ok() {
-            // The cooldown thread has sent a message (meaning that the cooldown is complete).
-            self.cooled_down = true;
-        }
-
         // Fire lasers with space if the cooldown has finished.
-        if keys.contains(&keyboard::KeyCode::Space) && self.cooled_down {
+        if keys.contains(&keyboard::KeyCode::Space) && self.time_since_shot_laser >= LASER_COOLDOWN
+        {
             self.lasers.push(self.ship.shoot(ctx));
-
-            // Notify the cooldown thread to start the cooldown as the ship has just fired a
-            // laser.
-            self.cooled_down = false;
-            self.shoot_s.send(()).unwrap();
+            self.time_since_shot_laser = Duration::from_millis(0);
+        } else {
+            self.time_since_shot_laser += delta_time;
         }
 
         // Make lasers move up the screen.
