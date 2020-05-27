@@ -25,6 +25,13 @@ impl<'a> Ship {
     pub fn shoot(&self, ctx: &mut ggez::Context) -> crate::Laser {
         crate::Laser::new(self.pos, ctx)
     }
+
+    pub fn clamp_pos_to_screen(&mut self, ctx: &ggez::Context) {
+        let screen_dimens = graphics::screen_coordinates(ctx);
+
+        self.pos.x = num::clamp(self.pos.x, 0.0, screen_dimens.w);
+        self.pos.y = num::clamp(self.pos.y, 0.0, screen_dimens.h);
+    }
 }
 
 impl crate::Position for Ship {

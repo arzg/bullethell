@@ -120,6 +120,7 @@ impl MainState {
             }
         };
         self.ship.step_distance(adjusted_ship_speed);
+        self.ship.clamp_pos_to_screen(ctx);
 
         //
         // Lasers
