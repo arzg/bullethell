@@ -52,7 +52,7 @@ impl crate::Velocity for SkyCore {
 impl crate::StepDistance for SkyCore {}
 
 impl Health for SkyCore {
-    const MAX_HEALTH: u16 = 500;
+    const MAX_HEALTH: u16 = 100;
 
     fn health(&self) -> u16 {
         self.health
