@@ -35,6 +35,7 @@ enum State {
 enum FrozenState {
     Died,
     Won,
+    Paused,
 }
 
 impl MainState {
@@ -95,6 +96,18 @@ impl MainState {
         let adjusted_sky_core_speed = SKY_CORE_SPEED * delta_time;
 
         let keys = keyboard::pressed_keys(ctx);
+
+        //
+        // Pause game if P is pressed
+        //
+
+        if keys.contains(&keyboard::KeyCode::P) {
+            self.state = State::Frozen {
+                state: FrozenState::Paused,
+                overlay_alpha: 0.0,
+            };
+            return Ok(());
+        }
 
         //
         // Ship
@@ -299,6 +312,7 @@ impl MainState {
             let text = match state {
                 FrozenState::Died => "You died.",
                 FrozenState::Won => "You won!",
+                FrozenState::Paused => "Paused",
             };
 
             graphics::Text::new(text)
