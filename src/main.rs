@@ -8,7 +8,7 @@ const SHIP_SPEED: f32 = 200.0;
 const LASER_SPEED: f32 = 900.0;
 const BULLET_SPEED: f32 = 100.0;
 const SKY_CORE_SPEED: f32 = 10.0;
-const LASER_COOLDOWN: Duration = Duration::from_millis(100);
+const LASER_COOLDOWN: Duration = Duration::from_millis(250);
 const SHIP_OFFSET_FROM_BOTTOM: f32 = 100.0;
 
 struct MainState {
