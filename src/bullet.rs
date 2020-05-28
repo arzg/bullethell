@@ -12,12 +12,22 @@ impl<'a> Bullet {
     pub fn new(pos: crate::Point, ctx: &mut ggez::Context) -> Self {
         use rand::Rng;
 
-        let mut rng = rand::thread_rng();
-        let rand_vector = crate::Vector::new(rng.gen_range(-0.5, 0.5), rng.gen_range(1.0, 2.5));
+        let velocity = {
+            let mut rng = rand::thread_rng();
+
+            let mut rand_vector =
+                crate::Vector::new(rng.gen_range(-1.0, 1.0), rng.gen_range(-1.0, 1.0));
+
+            // Normalize so that we can randomly modify the speed from a consistent base.
+            rand_vector.normalize_mut();
+            rand_vector *= rng.gen_range(0.5, 2.0);
+
+            rand_vector
+        };
 
         Self {
             pos,
-            velocity: rand_vector,
+            velocity,
             sprite_cache: Self::sprite(Self::IMG_DATA, ctx).unwrap(),
         }
     }
