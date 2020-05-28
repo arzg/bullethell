@@ -156,7 +156,13 @@ impl MainState {
             self.bullets.push(self.sky_core.shoot(ctx));
         }
 
-        self.sky_core.step_distance(adjusted_sky_core_speed);
+        // Stop the Sky Core from its march down the screen once it reaches the centre.
+        let is_sky_core_before_vertical_center =
+            self.sky_core.pos().y < graphics::screen_coordinates(ctx).h / 2.0;
+
+        if is_sky_core_before_vertical_center {
+            self.sky_core.step_distance(adjusted_sky_core_speed);
+        }
 
         //
         // Bullets
