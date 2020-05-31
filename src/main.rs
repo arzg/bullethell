@@ -10,6 +10,7 @@ const BULLET_SPEED: f32 = 100.0;
 const SKY_CORE_SPEED: f32 = 10.0;
 const LASER_COOLDOWN: Duration = Duration::from_millis(250);
 const SHIP_OFFSET_FROM_BOTTOM: f32 = 100.0;
+const FROZEN_SCREEN_FONT_SIZE: f32 = 150.0;
 
 struct MainState {
     ship: game_test::Ship,
@@ -294,10 +295,23 @@ impl MainState {
                 FrozenState::Paused => "Paused",
             };
 
-            graphics::Text::new(text)
+            graphics::Text::new(
+                graphics::TextFragment::new(text)
+                    .scale(graphics::Scale::uniform(FROZEN_SCREEN_FONT_SIZE)),
+            )
         };
 
-        graphics::draw(ctx, &text, (game_test::Point::new(0.0, 0.0),))?;
+        let screen_dimens = graphics::screen_coordinates(ctx);
+        let (text_width, text_height) = text.dimensions(ctx);
+
+        graphics::draw(
+            ctx,
+            &text,
+            (game_test::Point::new(
+                screen_dimens.w / 2.0 - text_width as f32 / 2.0,
+                screen_dimens.h / 2.0 - text_height as f32 / 2.0,
+            ),),
+        )?;
 
         Ok(())
     }
